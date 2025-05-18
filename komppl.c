@@ -1552,7 +1552,7 @@ int OEN2 ()
   memcpy ( ASS_CARD._BUFCARD.OPERAND,"15,@R14", 7 );/* операнды команды и     */
 
   memcpy ( ASS_CARD._BUFCARD.COMM,                /* поле построчного комен-*/
-		       "Return to the operating system", 31 );/* тария                  */
+		       "Return to the operating system", 30 );/* тария                  */
 
   ZKARD ();                                       /* запомнить опреацию     */
 						  /* Ассемблера             */
@@ -1580,8 +1580,8 @@ printf("SYM[%d].NAME: %s | SYM.TYPE = %c |  SYM.INIT=%s | Value = %d\n",i, SYM[i
 	if(!strcmp(SYM[i].INIT,"0B")) 
 	{
 		memcpy(ASS_CARD._BUFCARD.OPERAC, "DS", 2);
-		strcpy(ASS_CARD._BUFCARD.OPERAND, "H");
-		memcpy(ASS_CARD._BUFCARD.COMM, "Reserve memory for variable C (uninitialized)", 46);
+		memcpy(ASS_CARD._BUFCARD.OPERAND, "H", 1);
+		memcpy(ASS_CARD._BUFCARD.COMM, "Reserve memory for variable C (uninitialized)", 45);
 	}
 	else 
 	{
@@ -1623,21 +1623,21 @@ printf("SYM[%d].NAME: %s | SYM.TYPE = %c |  SYM.INIT=%s | Value = %d\n",i, SYM[i
   memcpy ( ASS_CARD._BUFCARD.METKA, "@RBASE", 6 ); /* формирование EQU-псев- */
   memcpy ( ASS_CARD._BUFCARD.OPERAC, "EQU",3 );   /* дооперации определения */
   memcpy ( ASS_CARD._BUFCARD.OPERAND, "5", 1 );  /* номера базового регист-*/
-  memcpy ( ASS_CARD._BUFCARD.COMM, "Assign register 5 as the base register (@RBASE)", 48);						  /* ра общего назначения   */
+  memcpy ( ASS_CARD._BUFCARD.COMM, "Assign register 5 as the base register (@RBASE)", 47);						  /* ра общего назначения   */
 						  /*           и            */
   ZKARD ();                                       /* запоминание ее         */
 
   memcpy ( ASS_CARD._BUFCARD.METKA, "@R1", 3 );  /* формирование EQU-псев- */
   memcpy ( ASS_CARD._BUFCARD.OPERAC, "EQU",3 );   /* дооперации определения */
   memcpy ( ASS_CARD._BUFCARD.OPERAND, "2", 1 );   /* номера базового регист-*/
-  memcpy ( ASS_CARD._BUFCARD.COMM, "Assign register 2 for use as @R1", 33 );						  /* ра общего назначения   */
+  memcpy ( ASS_CARD._BUFCARD.COMM, "Assign register 2 for use as @R1", 32 );						  /* ра общего назначения   */
 						  /*            и           */
   ZKARD ();                                       /* запоминание ее         */
   
   memcpy ( ASS_CARD._BUFCARD.METKA, "@R2", 3 ); /* формирование EQU-псев- */
   memcpy ( ASS_CARD._BUFCARD.OPERAC, "EQU",3 );   /* дооперации определения */
   memcpy ( ASS_CARD._BUFCARD.OPERAND, "3", 1 );  /* номера базового регист-*/
-  memcpy ( ASS_CARD._BUFCARD.COMM, "Assign register 3 for use as @R2", 33 );  /* номера базового регист-*/
+  memcpy ( ASS_CARD._BUFCARD.COMM, "Assign register 3 for use as @R2", 32 );  /* номера базового регист-*/
 
   ZKARD();
 
@@ -1655,7 +1655,7 @@ printf("SYM[%d].NAME: %s | SYM.TYPE = %c |  SYM.INIT=%s | Value = %d\n",i, SYM[i
   // ASS_CARD._BUFCARD.OPERAND [i] = FORMT [1][i++];/*         и              */
 
   memcpy ( ASS_CARD._BUFCARD.COMM,                /* построчного коментария */
-			  "End of program", 15 );
+			  "End of program", 14 );
 
   ZKARD ();                                       /* запоминание псевдоопе- */
 						  /* рации                  */
@@ -1748,8 +1748,10 @@ int OPR2 ()
 						  /* ПЛ1 - "начало процедур-*/
 						  /* ного блока"            */
   while ( FORMT [0][i] != '\x0' )
-   ASS_CARD._BUFCARD.METKA [i] = FORMT [0][i++];  /* нулевой терм используем*/
-						  /* как метку в START-псев-*/
+  {
+   ASS_CARD._BUFCARD.METKA [i] = FORMT [0][i];  /* нулевой терм используем*/
+   i++;
+  }						  /* как метку в START-псев-*/
 						  /* дооперации Ассемблера  */
 
   memcpy ( ASS_CARD._BUFCARD.OPERAC, "START", 5 );/* достраиваем код и опе- */
@@ -1763,14 +1765,14 @@ int OPR2 ()
   memcpy ( ASS_CARD._BUFCARD.OPERAND,             /* Ассемблера             */
 				  "@RBASE,0", 8 );
   memcpy ( ASS_CARD._BUFCARD.COMM,
-		  "Load base address into register @RBASE", 39 );
+		  "Load base address into register @RBASE", 38 );
   ZKARD ();                                       /* и запоминаем ее        */
 
   memcpy ( ASS_CARD._BUFCARD.OPERAC, "USING", 5 );/* формируем USING-псевдо-*/
   memcpy ( ASS_CARD._BUFCARD.OPERAND,             /* операцию Ассемблера    */
 				   "*,@RBASE", 8 );
   memcpy ( ASS_CARD._BUFCARD.COMM,
-		  "Declare @RBASE as base register", 32 );
+		  "Declare @RBASE as base register", 31 );
   ZKARD ();                                       /* и запоминаем ее        */
 
   return 0;                                       /* завершить подпрограмму */
@@ -1850,7 +1852,7 @@ int ITE1 ()
 int ITE2 ()
  {
 	 FORM();
-    char labelLess[10], labelStore[10];
+    char labelLess[5], labelStore[6];
 
     // Генерация уникальных меток
     sprintf(labelLess, "@LESS");
@@ -1858,59 +1860,61 @@ int ITE2 ()
 
     // LH R1, A
     memcpy(ASS_CARD._BUFCARD.OPERAC, "LH", 2);
-    strcpy(ASS_CARD._BUFCARD.OPERAND, "@R1,A");
-    memcpy(ASS_CARD._BUFCARD.COMM, "Load the value of variable A into register @R1", 47);
+    memcpy(ASS_CARD._BUFCARD.OPERAND, "@R1,A", 5);
+    memcpy(ASS_CARD._BUFCARD.COMM, "Load the value of variable A into register @R1", 46);
     ZKARD();
 
     // LH R2, B
     memcpy(ASS_CARD._BUFCARD.OPERAC, "LH", 2);
-    strcpy(ASS_CARD._BUFCARD.OPERAND, "@R2,B");
-    memcpy(ASS_CARD._BUFCARD.COMM, "Load the value of variable B into register @R2", 47);
+    memcpy(ASS_CARD._BUFCARD.OPERAND, "@R2,B", 5);
+    memcpy(ASS_CARD._BUFCARD.COMM, "Load the value of variable B into register @R2", 46);
     ZKARD();
 
     // CR R1, R2
     memcpy(ASS_CARD._BUFCARD.OPERAC, "CR", 2);
-    strcpy(ASS_CARD._BUFCARD.OPERAND, "@R1,@R2");
-    memcpy(ASS_CARD._BUFCARD.COMM, "Compare values in registers @R1 and @R2 ", 41);
+    memcpy(ASS_CARD._BUFCARD.OPERAND, "@R1,@R2", 7);
+    memcpy(ASS_CARD._BUFCARD.COMM, "Compare values in registers @R1 and @R2 ", 40);
     ZKARD();
 
     // BCR 4,@LESS — переход, если условие (A < B) выполнено
-    memcpy(ASS_CARD._BUFCARD.OPERAC, "BCR", 3);
-    sprintf(ASS_CARD._BUFCARD.OPERAND, "4,@LESS");
-    memcpy(ASS_CARD._BUFCARD.COMM, "If A < B, jump to label @LESS", 30);
+    memcpy(ASS_CARD._BUFCARD.OPERAC, "BC", 2);
+    memcpy(ASS_CARD._BUFCARD.OPERAND, "4,@LESS", 7);
+    memcpy(ASS_CARD._BUFCARD.COMM, "If A < B, jump to label @LESS", 29);
     ZKARD();
 
     // THEN: SR @R1,@R2 — A - B
     memcpy(ASS_CARD._BUFCARD.OPERAC, "SR", 2);
-    strcpy(ASS_CARD._BUFCARD.OPERAND, "@R1,@R2");
-    memcpy(ASS_CARD._BUFCARD.COMM, "Else, compute A - B", 20);
+    memcpy(ASS_CARD._BUFCARD.OPERAND, "@R1,@R2", 7);
+    memcpy(ASS_CARD._BUFCARD.COMM, "Else, compute A - B", 19);
     ZKARD();
 
+    char temp[32];
+    int len = snprintf(temp, sizeof(temp), "15,%s", labelStore);
     // BC 15,@STORE — безусловный переход к STORE
     memcpy(ASS_CARD._BUFCARD.OPERAC, "BC", 2);
-    sprintf(ASS_CARD._BUFCARD.OPERAND, "15,%s", labelStore);
-    memcpy(ASS_CARD._BUFCARD.COMM, "Unconditional jump to label @STORE", 35);
+    memcpy(ASS_CARD._BUFCARD.OPERAND, temp,len);
+    memcpy(ASS_CARD._BUFCARD.COMM, "Unconditional jump to label @STORE", 34);
     ZKARD();
 
     // @LESS: SR @R2,@R1 — B - A
-    strcpy(ASS_CARD._BUFCARD.METKA, labelLess);
+    memcpy(ASS_CARD._BUFCARD.METKA, "@LESS", sizeof(labelLess));
     memcpy(ASS_CARD._BUFCARD.OPERAC, "SR", 2);
-    strcpy(ASS_CARD._BUFCARD.OPERAND, "@R2,@R1");
-    memcpy(ASS_CARD._BUFCARD.COMM, "Compute B - A", 14);
+    memcpy(ASS_CARD._BUFCARD.OPERAND, "@R2,@R1",  7);
+    memcpy(ASS_CARD._BUFCARD.COMM, "Compute B - A", 13);
     ZKARD();
 
     // LR @R1,@R2 — результат переносим в @R1
     memset(ASS_CARD._BUFCARD.METKA, ' ', 8);
     memcpy(ASS_CARD._BUFCARD.OPERAC, "LR", 2);
-    strcpy(ASS_CARD._BUFCARD.OPERAND, "@R1,@R2");
-    memcpy(ASS_CARD._BUFCARD.COMM, "Save result in @R1", 19);
+    memcpy(ASS_CARD._BUFCARD.OPERAND, "@R1,@R2", 7);
+    memcpy(ASS_CARD._BUFCARD.COMM, "Save result in @R1", 18);
     ZKARD();
 
     // @STORE: STH @R1,C — запись результата в C
-    strcpy(ASS_CARD._BUFCARD.METKA, labelStore);
+    memcpy(ASS_CARD._BUFCARD.METKA, labelStore,sizeof(labelStore));
     memcpy(ASS_CARD._BUFCARD.OPERAC, "STH", 3);
-    strcpy(ASS_CARD._BUFCARD.OPERAND, "@R1,C");
-    memcpy(ASS_CARD._BUFCARD.COMM, "Store the result from register @R1 into variable C", 51);
+    memcpy(ASS_CARD._BUFCARD.OPERAND, "@R1,C", 5);
+    memcpy(ASS_CARD._BUFCARD.COMM, "Store the result from register @R1 into variable C", 50);
     ZKARD();
 
   return 0;
