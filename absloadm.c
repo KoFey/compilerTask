@@ -10,7 +10,7 @@
 #define  NSPIS  5                                 /*разм.списка загр.прогр. */
 #define  NOBJ   50                                /*разм.масс.об'ектных карт*/
 #define  DOBLZ  1024                              /*длина области загрузки  */
-#define  NOP 6                                    /*кол-во обрабатываемых   */
+#define  NOP 12                                    /*кол-во обрабатываемых   */
 						  /* команд                 */
 
 
@@ -72,7 +72,8 @@ int R1,                                           /*номер 1-го регис
 						  /*в формате RX            */
     B;                                            /*номер базового регистра */
 						  /*в формате RX            */
-unsigned long I,                                  /*счетчик адр.тек.ком-ды  */
+int CC;  // condition code register (0 - equal, 1 - less, 2 - greater)
+    unsigned long I,                                  /*счетчик адр.тек.ком-ды  */
 	      BAS_ADDR,                           /*адрес начала обл.загруз.*/
 	      I1,ADDR,ARG,VS;                     /*вспомогательные перем.  */
 unsigned long VR[16],                             /*массив,содерж.знач.рег. */
@@ -126,7 +127,13 @@ int BAS_IND;                                      /*индекс масс.обл
 {{'S' , 'T' , ' ' , ' ' , ' '} , '\x50', 4 , FRX}, /*таблицы                 */
 {{'L' , ' ' , ' ' , ' ' , ' '} , '\x58', 4 , FRX}, /*машинных                */
 {{'A' , ' ' , ' ' , ' ' , ' '} , '\x5A', 4 , FRX}, /*операций                */
-{{'S' , ' ' , ' ' , ' ' , ' '} , '\x5B', 4 , FRX}, /*                        */
+{{'S' , ' ' , ' ' , ' ' , ' '} , '\x5B', 4 , FRX},
+{{'L' , 'H' , ' ' , ' ' , ' '} , '\x48', 4 , FRX} ,
+{{'C' , 'R' , ' ' , ' ' , ' '} , '\x19', 2 , FRR} ,
+{{'B' , 'C' , ' ' , ' ' , ' '} , '\x47', 4 , FRX} ,
+{{'S' , 'R' , ' ' , ' ' , ' '} , '\x1B', 2 , FRR} ,
+{{'L' , 'R' , ' ' , ' ' , ' '} , '\x18', 2 , FRR} ,
+{{'S' , 'T' , 'H' , ' ' , ' '} , '\x40', 4 , FRX} ,       	/*                        */
     };
 //..........................................................................
 //п р о г р а м м а реализации семантики команды BALR
@@ -206,6 +213,136 @@ int P_L()                                         /*  п р о г р а м м а
 
    return 0;                                      /*успешное заверш.прогр.  */
  }
+
+int P_CR(void)
+{
+  int ret = 0;
+  if (R1 != 0 && R2 != 0) // check for register 0 usage
+  {
+    if (VR[R1] == VR[R2])
+      CC = 0; // equal
+    else if ((int)VR[R1] < (int)VR[R2])
+      CC = 1; // less than
+    else
+      CC = 2; // greater than
+
+    // Debug output to status window
+    wprintw(wcyan, "CR: compare R%d (%08lX) and R%d (%08lX), CC=%d\n",
+            R1, VR[R1], R2, VR[R2], CC);
+  }
+  else
+  {
+    wprintw(wcyan, "CR: skipped (R1 or R2 is 0)\n");
+  }
+
+  wrefresh(wcyan);
+  return ret;
+}
+
+int P_LR(void)
+{
+  int ret = 0;
+
+  if (R1 != 0 && R2 != 0) // check for register 0 usage
+    VR[R1] = VR[R2];     // load value from R2 into R1
+
+  // Debug output to status window
+  wprintw(wcyan, "LR: ");
+  if (R1 != 0 && R2 != 0)
+    wprintw(wcyan, "R%d := %08lX from R%d\n", R1, VR[R1], R2);
+  else
+    wprintw(wcyan, "skipped (R1 or R2 is 0)\n");
+
+  wrefresh(wcyan);
+  return ret;
+}
+
+
+int P_SR(void)
+{
+  int ret = 0;
+
+  if (R1 != 0 && R2 != 0)
+  {
+    unsigned int before = VR[R1];
+    VR[R1] = VR[R1] - VR[R2];
+
+    wprintw(wcyan, "SR: R%d = %08X - %08X = %08X\n",
+            R1, before, VR[R2], VR[R1]);
+  }
+  else
+  {
+    wprintw(wcyan, "SR: пропущено (R1 или R2 = 0)\n");
+  }
+
+  wrefresh(wcyan);
+  return ret;
+}
+
+
+int P_LH()
+{
+  int sm;
+
+  ADDR = VR[B] + VR[X] + D;
+  sm = (int)(ADDR - I);
+  VR[R1] = (short)(OBLZ[BAS_IND + CUR_IND + sm] * 0x100 +
+                   OBLZ[BAS_IND + CUR_IND + sm + 1]);
+
+  return 0;
+}
+
+int P_BC()
+{
+  int sm;
+  int RES;
+  int new_I, new_IND;
+
+  ADDR = VR[B] + VR[X] + D;
+  sm = (int)(ADDR - I);
+
+  new_I = BAS_ADDR + CUR_IND + sm;
+  new_IND = CUR_IND + sm;
+ printf("BC: R1 (mask) = %d, CC = %d || ", R1, CC);
+  printf("BC: ADDR = %08X, new_I = %08X, new_IND = %d || ", ADDR, new_I, new_IND);
+
+  switch (R1)
+  {
+  case 15:
+    I = new_I;
+    CUR_IND = new_IND;
+    break;
+  case 4:
+    if (CC == 1)
+    {
+      I = new_I;
+      CUR_IND = new_IND;
+    }
+    break;
+  default:
+    break;
+  }
+  return (0);
+}
+
+
+int P_STH()
+{
+  int sm, i;
+  char bytes[2];
+
+  ADDR = VR[B] + VR[X] + D;
+  sm = (int)(ADDR - I);
+
+  bytes[0] = (VR[R1] - VR[R1] % 0x100L) / 0x100L;
+  bytes[1] = VR[R1] % 0x100;
+
+  for (i = 0; i < 2; i++)
+    OBLZ[BAS_IND + CUR_IND + sm + i] = bytes[i];
+
+  return 0;
+}
+
 
 /*..........................................................................*/
 
@@ -306,8 +443,17 @@ int FRX(void)
       
       ADDR = VR[B] + VR[X] + D;
       wprintw(wgreen,"        %.06lX       \n", ADDR);
-      if (ADDR % 4 != 0)
-        return (7);
+
+if ((INST[0] == 0x48 || INST[0] == 0x40 || INST[0] == 0x47)) {
+    if (ADDR % 2 != 0) {
+        return 7;
+    } else {
+        return 0;  // Всё хорошо, кратность 2 соблюдена — выходим
+    }
+}
+if (ADDR % 4 != 0) {
+    return 7;
+}
       break;
     }
   }
@@ -425,6 +571,7 @@ BEGIN:
         }                                      /*                        */
         else INST [j] = '\x00';                     /*                        */
       }
+      
       if ((res = T_MOP[i].BXPROG()) != 0)    /* уйти в программу отобр.*/
 	return (res);   			  /* ассемблерного эквивале-*/
 						  /* нта текущей команды,   */
@@ -545,6 +692,26 @@ SKIP:
     case '\x5A' : P_A();
 		   break;
     case '\x5B' : P_S();
+		  break;
+    case '\x48':
+    	 	  P_LH();
+    		  break;
+    case '\x40':
+    		  P_STH();
+    		  break;
+    case '\x19':
+    		  P_CR(); 
+    		  break;
+    case '\x1B':
+    		  P_SR(); 
+    		  break;
+    case '\x18':
+    		  P_LR(); 
+    		  break; 
+    case '\x47':
+    		  P_BC();
+    		  break;
+
    }
    
    goto BEGIN;	
